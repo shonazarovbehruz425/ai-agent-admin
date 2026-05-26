@@ -1749,3 +1749,17 @@ textarea:focus-visible,
 .api-key-input { padding: 9px 12px; background: var(--bg-input); border: 1px solid var(--border-mid); border-radius: var(--r-sm); color: var(--text-primary); font-family: var(--mono); font-size: 12.5px; width: 100%; transition: border-color .15s; }
 .api-key-input:focus { outline: none; border-color: var(--accent); }
 .api-key-input::placeholder { color: var(--text-muted); font-family: var(--font); }
+
+/* ── Skeleton Loading Shimmer ───────────────────────────── */
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-hover) 25%, var(--bg-elevated) 50%, var(--bg-hover) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite linear;
+  border-radius: var(--r-sm);
+  display: inline-block;
+}
