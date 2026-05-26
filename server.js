@@ -416,7 +416,7 @@ app.delete('/api/users', authMiddleware, (req, res) => {
 });
 
 // ─── API Config Keys (Settings) ──────────────────────────
-app.get('/api/config/keys', (req, res) => {
+app.get('/api/config/keys', authMiddleware, (req, res) => {
   try {
     const rows = db.prepare('SELECT * FROM config').all();
     const keysObj = {};
