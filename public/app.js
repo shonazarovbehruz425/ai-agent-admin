@@ -681,14 +681,14 @@
         <div class="card" style="margin-bottom:14px">
           <div class="card-head">
             <h3>🔑 AI Provider API Keys</h3>
-            <span style="font-size:11px;color:var(--t3)">Synced to all extension users</span>
+            <span style="font-size:11px;color:var(--text-tertiary)">Synced to all extension users</span>
           </div>
           <div style="padding:16px;display:flex;flex-direction:column;gap:0">
             ${PROVIDERS_CONFIG.map((p, i) => `
               <div style="padding:16px 0;${i > 0 ? 'border-top:1px solid var(--border)' : ''}">
                 <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
                   <div style="width:32px;height:32px;border-radius:8px;background:${p.bg};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0">${p.letter}</div>
-                  <div style="font-size:14px;font-weight:600;color:var(--t1)">${p.label}</div>
+                  <div style="font-size:14px;font-weight:600;color:var(--text-primary)">${p.label}</div>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:8px">
                   <div style="position:relative">
@@ -700,7 +700,7 @@
                       value="${esc(currentKeys[p.keyField] || '')}"
                       style="padding-right:40px"
                     />
-                    <button type="button" onclick="toggleKeyVisibility('ak_${p.keyField}', this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--t3);font-size:14px">👁</button>
+                    <button type="button" onclick="toggleKeyVisibility('ak_${p.keyField}', this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-tertiary);font-size:14px">👁</button>
                   </div>
                   ${p.models ? `
                     <select id="ak_${p.modelField}" class="filter-select" style="width:100%">
@@ -721,7 +721,7 @@
         </div>
         <div class="card">
           <div class="card-head"><h3>ℹ️ How it works</h3></div>
-          <div style="padding:14px 18px;font-size:13px;color:var(--t2);line-height:1.8">
+          <div style="padding:14px 18px;font-size:13px;color:var(--text-secondary);line-height:1.8">
             <p>API keys saved here are <strong>automatically synced</strong> to all extension users when they open the extension.</p>
             <p style="margin-top:6px">Users don't need to enter API keys themselves — you manage them centrally from this panel.</p>
           </div>
