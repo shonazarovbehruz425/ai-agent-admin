@@ -109,7 +109,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: false
 }));
-app.options('*', cors()); // preflight
+app.options('/{*path}', cors()); // preflight for Express 5
 app.use(compression()); // gzip — text compression
 app.use(express.json({ limit: '1mb' }));
 
