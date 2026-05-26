@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="AI Agent Admin Panel — Real-time monitoring va analytics dashboard"/>
+  <title>AI Agent — Admin Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">🤖</div>
+        <div class="brand-text">
+          <div class="brand-name">AI Agent</div>
+          <div class="brand-badge">ADMIN</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav" aria-label="Asosiy navigatsiya">
+        <button type="button" class="nav-item active" data-page="dashboard" id="nav-dashboard">
+          <span class="nav-icon">📊</span>
+          <span>Dashboard</span>
+        </button>
+        <button type="button" class="nav-item" data-page="users" id="nav-users">
+          <span class="nav-icon">👥</span>
+          <span>Foydalanuvchilar</span>
+        </button>
+        <button type="button" class="nav-item" data-page="providers" id="nav-providers">
+          <span class="nav-icon">🧠</span>
+          <span>AI Providerlar</span>
+        </button>
+        <button type="button" class="nav-item" data-page="requests" id="nav-requests">
+          <span class="nav-icon">📡</span>
+          <span>So'rovlar</span>
+        </button>
+        <button type="button" class="nav-item" data-page="live" id="nav-live">
+          <span class="nav-icon">🔴</span>
+          <span>Real-time</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="connection-status" id="connectionStatus" aria-live="polite">
+          <span class="conn-dot"></span>
+          <span>Firebase ulangan</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <!-- Topbar -->
+      <header class="topbar">
+        <h1 class="page-title" id="pageTitle">📊 Dashboard</h1>
+        <div class="topbar-right">
+          <div class="time-filter">
+            <button class="filter-btn active" data-range="today">Bugun</button>
+            <button class="filter-btn" data-range="week">Hafta</button>
+            <button class="filter-btn" data-range="month">Oy</button>
+            <button class="filter-btn" data-range="all">Hammasi</button>
+          </div>
+          <button class="refresh-btn" id="refreshBtn">🔄 Yangilash</button>
+        </div>
+      </header>
+
+      <!-- Dashboard Page -->
+      <section class="page active" id="page-dashboard">
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-icon users">👥</div>
+            <div class="stat-body">
+              <div class="stat-value" id="totalUsers">0</div>
+              <div class="stat-label">Jami userlar</div>
+              <div class="stat-change positive" id="newUsersToday">↑ +0 bugun</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon requests">📡</div>
+            <div class="stat-body">
+              <div class="stat-value" id="totalRequests">0</div>
+              <div class="stat-label">Jami so'rovlar</div>
+              <div class="stat-change positive" id="requestsToday">↑ +0 bugun</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon active-now">🟢</div>
+            <div class="stat-body">
+              <div class="stat-value" id="activeNow">0</div>
+              <div class="stat-label">Hozir aktiv</div>
+              <div class="stat-change">oxirgi 5 daqiqa</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon actions">⚡</div>
+            <div class="stat-body">
+              <div class="stat-value" id="totalActions">0</div>
+              <div class="stat-label">Bajarilgan amallar</div>
+              <div class="stat-change" id="actionsToday">↑ +0 bugun</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="charts-row">
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3>🎯 AI Provider foydalanish</h3>
+            </div>
+            <div class="provider-chart" id="providerChart"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3>📈 Kunlik so'rovlar (7 kun)</h3>
+            </div>
+            <div class="bar-chart" id="dailyChart"></div>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="card">
+          <div class="card-header">
+            <h3>⚡ So'nggi faoliyat (real-time)</h3>
+            <span class="live-dot">● LIVE</span>
+          </div>
+          <div class="activity-feed" id="activityFeed">
+            <div class="empty-state">⏳ Ma'lumot kutilmoqda...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Users Page -->
+      <section class="page" id="page-users">
+        <div class="card">
+          <div class="card-header">
+            <h3>👥 Foydalanuvchilar ro'yxati</h3>
+            <div class="header-meta">
+              <span id="usersCount">0 ta user</span>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>User ID</th>
+                  <th>Birinchi kirish</th>
+                  <th>Oxirgi faollik</th>
+                  <th>So'rovlar</th>
+                  <th>Asosiy AI</th>
+                  <th>Holat</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody">
+                <tr><td colspan="6" class="empty-cell">Yuklanmoqda...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Providers Page -->
+      <section class="page" id="page-providers">
+        <div class="providers-grid" id="providersGrid"></div>
+
+        <div class="card" style="margin-top:18px">
+          <div class="card-header">
+            <h3>📊 Provider bo'yicha taqqoslash</h3>
+          </div>
+          <div class="comparison-chart" id="comparisonChart"></div>
+        </div>
+      </section>
+
+      <!-- Requests Page -->
+      <section class="page" id="page-requests">
+        <div class="card">
+          <div class="card-header">
+            <h3>📋 So'nggi so'rovlar</h3>
+            <div class="header-meta">
+              <select id="filterProvider" class="filter-select" aria-label="AI provayderini tanlash">
+                <option value="all">Barcha AI</option>
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Claude</option>
+                <option value="gemini">Gemini</option>
+                <option value="ollama">Ollama</option>
+                <option value="openrouter">OpenRouter</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Vaqt</th>
+                  <th>User</th>
+                  <th>AI</th>
+                  <th>Xabar</th>
+                  <th>Amallar</th>
+                  <th>Holat</th>
+                </tr>
+              </thead>
+              <tbody id="requestsTableBody">
+                <tr><td colspan="6" class="empty-cell">Yuklanmoqda...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Live Page -->
+      <section class="page" id="page-live">
+        <div class="live-header">
+          <div class="live-indicator">
+            <span class="live-pulse"></span>
+            <span>Real-time monitoring</span>
+          </div>
+          <span id="liveCount" style="color:var(--text-secondary);font-size:13px;font-weight:600">0 ta aktiv user</span>
+        </div>
+        <div class="live-feed" id="liveFeed">
+          <div class="empty-state">⏳ Hozircha faoliyat yo'q. Userlar extension ishlatganda bu yerda ko'rinadi.</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

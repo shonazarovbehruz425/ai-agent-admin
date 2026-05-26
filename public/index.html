@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
+  <meta name="description" content="AI Agent Browser — admin panel. Users, AI provider statistics and real-time monitoring."/>
+  <meta name="theme-color" content="#a78bfa"/>
+  <title>AI Agent — Admin Panel</title>
+  <link rel="canonical" href="http://localhost:3000/"/>
+  <link rel="alternate" hreflang="uz" href="http://localhost:3000/"/>
+  <link rel="alternate" hreflang="x-default" href="http://localhost:3000/"/>
+  <link rel="stylesheet" href="/style.css"/>
+  <link rel="preload" href="/app.js" as="script"/>
+</head>
+<body>
+  <!-- LOGIN -->
+  <div id="loginPage" class="login-page" role="main" aria-label="Login page">
+    <div class="login-card">
+      <div class="login-logo" aria-hidden="true">🤖</div>
+      <h1 class="login-title">Admin Panel</h1>
+      <p class="login-sub">AI Agent admin panel</p>
+      <form id="loginForm" aria-label="Login form">
+        <div class="field">
+          <label for="loginUser">Username</label>
+          <input type="text" id="loginUser" name="username" value="admin" required autocomplete="username" aria-required="true"/>
+        </div>
+        <div class="field">
+          <label for="loginPass">Password</label>
+          <input type="password" id="loginPass" name="password" value="admin123" required autocomplete="current-password" aria-required="true"/>
+        </div>
+        <button type="submit" class="btn-primary full" aria-label="Sign In">Sign In</button>
+        <div id="loginError" class="error-msg" role="alert" aria-live="polite" style="display:none"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="app" style="display:none">
+    <!-- Skip link for keyboard users -->
+    <a href="#mainContent" class="skip-link">Skip to main content</a>
+    <aside class="sidebar" role="navigation" aria-label="Main navigation">
+      <div class="sidebar-brand">
+        <span class="brand-icon" aria-hidden="true">🤖</span>
+        <span class="brand-name">AI Agent</span>
+        <span class="brand-badge">Admin</span>
+      </div>
+      <nav class="sidebar-nav" aria-label="Pages menu">
+        <button type="button" class="nav-item active" data-page="dashboard" aria-current="page">
+          <span aria-hidden="true">📊</span> Dashboard
+        </button>
+        <button type="button" class="nav-item" data-page="accounts">
+          <span aria-hidden="true">👤</span> Users
+        </button>
+        <button type="button" class="nav-item" data-page="providers">
+          <span aria-hidden="true">🧠</span> AI Providers
+        </button>
+        <button type="button" class="nav-item" data-page="events">
+          <span aria-hidden="true">📡</span> Events
+        </button>
+        <button type="button" class="nav-item" data-page="live">
+          <span aria-hidden="true">🔴</span> Real-time
+        </button>
+        <button type="button" class="nav-item" data-page="settings">
+          <span aria-hidden="true">⚙️</span> Settings
+        </button>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="conn-status" id="connStatus" role="status" aria-live="polite">
+          <span class="conn-dot offline" aria-hidden="true"></span>
+          <span id="connText">Connecting...</span>
+        </div>
+        <button type="button" class="btn-logout" id="logoutBtn" aria-label="Sign out">Sign out</button>
+      </div>
+    </aside>
+
+    <main class="main" id="mainContent" role="main">
+      <header class="topbar" role="banner">
+        <h1 id="pageTitle">Dashboard</h1>
+        <div class="topbar-right">
+          <span class="live-badge" id="liveBadge" aria-label="Live mode active">🔴 Live</span>
+          <button type="button" class="btn-ghost" id="refreshBtn" aria-label="Refresh">
+            <span aria-hidden="true">🔄</span> Refresh
+          </button>
+        </div>
+      </header>
+
+      <!-- DASHBOARD PAGE -->
+      <section class="page active" id="page-dashboard" aria-labelledby="pageTitle">
+        <div class="stats-row" role="list" aria-label="Statistics">
+          <article class="stat-card" role="listitem">
+            <div class="stat-icon blue" aria-hidden="true">👥</div>
+            <div>
+              <div class="stat-val" id="s-users">0</div>
+              <div class="stat-lbl">Total users</div>
+              <div class="stat-sub" id="s-active">0 active now</div>
+            </div>
+          </article>
+          <article class="stat-card" role="listitem">
+            <div class="stat-icon purple" aria-hidden="true">📡</div>
+            <div>
+              <div class="stat-val" id="s-requests">0</div>
+              <div class="stat-lbl">Total requests</div>
+              <div class="stat-sub" id="s-today-req">0 today</div>
+            </div>
+          </article>
+          <article class="stat-card" role="listitem">
+            <div class="stat-icon green" aria-hidden="true">⚡</div>
+            <div>
+              <div class="stat-val" id="s-actions">0</div>
+              <div class="stat-lbl">Actions executed</div>
+            </div>
+          </article>
+          <article class="stat-card" role="listitem">
+            <div class="stat-icon red" aria-hidden="true">❌</div>
+            <div>
+              <div class="stat-val" id="s-errors">0</div>
+              <div class="stat-lbl">Errors</div>
+              <div class="stat-sub" id="s-error-rate">0% error rate</div>
+            </div>
+          </article>
+        </div>
+
+        <div class="charts-row">
+          <section class="card" aria-labelledby="provChartTitle">
+            <div class="card-head">
+              <h2 id="provChartTitle">AI Provider usage</h2>
+            </div>
+            <div id="providerChart" class="provider-chart"></div>
+          </section>
+          <section class="card" aria-labelledby="weekChartTitle">
+            <div class="card-head">
+              <h2 id="weekChartTitle">Daily requests (7 days)</h2>
+            </div>
+            <div id="weeklyChart" class="weekly-chart"></div>
+          </section>
+        </div>
+
+        <section class="card" aria-labelledby="recentTitle">
+          <div class="card-head">
+            <h2 id="recentTitle">Recent events</h2>
+            <span class="live-dot-inline" aria-label="Live updating">● LIVE</span>
+          </div>
+          <div id="recentFeed" class="event-feed" role="log" aria-live="polite" aria-label="Events feed"></div>
+        </section>
+      </section>
+
+      <!-- ACCOUNTS PAGE -->
+      <section class="page" id="page-accounts" aria-labelledby="accTitle" hidden>
+        <section class="card">
+          <div class="card-head">
+            <h2 id="accTitle">Registered users</h2>
+            <label for="userSearch" class="visually-hidden">Search users</label>
+            <input type="search" id="userSearch" name="search" class="search-input" placeholder="Email or name..." aria-label="Search by email or name"/>
+          </div>
+          <table class="data-table">
+            <caption class="visually-hidden">Registered users list</caption>
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Email</th>
+                <th scope="col">Name</th>
+                <th scope="col">Registered</th>
+                <th scope="col">Last login</th>
+                <th scope="col">Status</th>
+                <th scope="col">Action</th>
+              </tr>
+            </thead>
+            <tbody id="usersBody">
+              <tr><td colspan="7" class="empty-cell">Loading...</td></tr>
+            </tbody>
+          </table>
+        </section>
+      </section>
+
+      <!-- PROVIDERS PAGE -->
+      <section class="page" id="page-providers" aria-labelledby="provTitle" hidden>
+        <h2 id="provTitle" class="visually-hidden">AI Providers statistics</h2>
+        <div id="providersGrid" class="providers-grid" role="list"></div>
+      </section>
+
+      <!-- EVENTS PAGE -->
+      <section class="page" id="page-events" aria-labelledby="evTitle" hidden>
+        <section class="card">
+          <div class="card-head">
+            <h2 id="evTitle">Events log</h2>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <label for="filterProvider" class="visually-hidden">Filter by AI provider</label>
+              <select id="filterProvider" name="provider" class="filter-select" aria-label="Select AI provider">
+                <option value="">All AI</option>
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Claude</option>
+                <option value="gemini">Gemini</option>
+                <option value="ollama">Ollama</option>
+                <option value="openrouter">OpenRouter</option>
+              </select>
+              <label for="filterDate" class="visually-hidden">Filter by date</label>
+              <input type="date" id="filterDate" name="date" class="filter-select" aria-label="Select date"/>
+              <button type="button" class="btn-ghost" id="applyFilter" aria-label="Apply filter">Filter</button>
+              <button type="button" class="btn-danger-sm" id="clearEventsBtn" aria-label="Clear all events">
+                <span aria-hidden="true">🗑</span> Clear
+              </button>
+            </div>
+          </div>
+          <table class="data-table">
+            <caption class="visually-hidden">All system events log</caption>
+            <thead>
+              <tr>
+                <th scope="col">Time</th>
+                <th scope="col">User</th>
+                <th scope="col">AI</th>
+                <th scope="col">Message</th>
+                <th scope="col">Actions</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody id="eventsBody">
+              <tr><td colspan="6" class="empty-cell">Loading...</td></tr>
+            </tbody>
+          </table>
+          <div class="pagination" id="eventsPagination" role="navigation" aria-label="Pagination"></div>
+        </section>
+      </section>
+
+      <!-- LIVE PAGE -->
+      <section class="page" id="page-live" aria-labelledby="liveTitle" hidden>
+        <header class="live-header">
+          <h2 id="liveTitle" class="live-indicator">
+            <span class="pulse-dot" aria-hidden="true"></span>
+            Real-time monitoring
+          </h2>
+          <span id="liveCount" aria-live="polite">0 active users</span>
+        </header>
+        <div id="liveFeed" class="live-feed" role="log" aria-live="polite" aria-label="Live events feed">
+          <p class="empty-msg">Waiting for events...</p>
+        </div>
+      </section>
+
+      <!-- SETTINGS PAGE -->
+      <section class="page" id="page-settings" aria-labelledby="setTitle" hidden>
+        <h2 id="setTitle" class="visually-hidden">Settings</h2>
+        <section class="card" style="max-width:600px">
+          <div class="card-head"><h3>Server settings</h3></div>
+          <ul class="settings-list">
+            <li class="setting-item">
+              <div>
+                <div class="setting-name">Extension API URL</div>
+                <div class="setting-desc">Enter this URL in the extension settings</div>
+              </div>
+              <div class="url-box" id="serverUrl" role="textbox" aria-readonly="true" tabindex="0" aria-label="API URL">http://localhost:3000/api/ingest</div>
+            </li>
+            <li class="setting-item">
+              <div>
+                <div class="setting-name">Change password</div>
+                <div class="setting-desc">Change ADMIN_PASSWORD in the .env file</div>
+              </div>
+              <span class="badge-info">.env</span>
+            </li>
+            <li class="setting-item">
+              <div>
+                <div class="setting-name">Export data</div>
+                <div class="setting-desc">Download all events as JSON</div>
+              </div>
+              <button type="button" class="btn-ghost" id="exportBtn" aria-label="Export data as JSON">
+                <span aria-hidden="true">📥</span> Export
+              </button>
+            </li>
+          </ul>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
