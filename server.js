@@ -103,7 +103,13 @@ const stmts = {
 };
 
 // ─── Middleware ───────────────────────────────────────────
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false
+}));
+app.options('*', cors()); // preflight
 app.use(compression()); // gzip — text compression
 app.use(express.json({ limit: '1mb' }));
 
