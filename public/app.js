@@ -662,22 +662,29 @@
   const API_KEY_FIELDS = ['openai_key','openai_model','anthropic_key','anthropic_model','gemini_key','gemini_model','openrouter_key','openrouter_model'];
 
   async function loadApiKeys() {
+    const form = document.getElementById('apiKeysForm');
+    if (!form) return;
+
+    // Always remove old listener and add fresh one
+    const newForm = form.cloneNode(true);
+    form.parentNode.replaceChild(newForm, form);
+
+    // Load existing keys
     try {
       const keys = await apiFetch('/api/config/keys');
       API_KEY_FIELDS.forEach(f => {
-        const el = document.getElementById('ak_' + f);
+        const el = newForm.querySelector('#ak_' + f);
         if (el && keys[f]) el.value = keys[f];
       });
     } catch {}
 
-    const form = document.getElementById('apiKeysForm');
-    if (!form || form._bound) return;
-    form._bound = true;
-
-    form.addEventListener('submit', async (e) => {
+    // Bind submit
+    newForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const btnText = document.getElementById('saveApiKeysBtnText');
-      const saveBtn = document.getElementById('saveApiKeysBtn');
+      e.stopPropagation();
+
+      const btnText = newForm.querySelector('#saveApiKeysBtnText');
+      const saveBtn = newForm.querySelector('#saveApiKeysBtn');
       if (!btnText || !saveBtn) return;
 
       btnText.textContent = '⏳ Saving...';
@@ -685,7 +692,7 @@
 
       const payload = {};
       API_KEY_FIELDS.forEach(f => {
-        const el = document.getElementById('ak_' + f);
+        const el = newForm.querySelector('#ak_' + f);
         if (el && el.value.trim()) payload[f] = el.value.trim();
       });
 
@@ -702,7 +709,7 @@
         saveBtn.disabled = false;
         const saved = document.getElementById('apiKeysSaved');
         if (saved) { saved.style.display = 'inline'; setTimeout(() => saved.style.display = 'none', 3000); }
-        showToast('✅ API keys saved & synced to users!', 'success');
+        showToast('✅ API keys saved & synced!', 'success');
       } catch (err) {
         btnText.textContent = '💾 Save Keys';
         saveBtn.disabled = false;
