@@ -600,11 +600,10 @@
       opts.body = JSON.stringify(body);
     }
     const res = await fetch(url, opts);
-    if (res.status === 401) {
-      logout();
-      throw new Error('Session expired');
-    }
-    return res.json();
+    if (res.status === 401) { logout(); throw new Error('Session expired'); }
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    return data;
   }
 
   function fmt(n) {
@@ -674,23 +673,40 @@
     const form = document.getElementById('apiKeysForm');
     if (!form || form._bound) return;
     form._bound = true;
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const btnText = document.getElementById('saveApiKeysBtnText');
+      const saveBtn = document.getElementById('saveApiKeysBtn');
+      if (!btnText || !saveBtn) return;
+
       btnText.textContent = '⏳ Saving...';
+      saveBtn.disabled = true;
+
       const payload = {};
       API_KEY_FIELDS.forEach(f => {
         const el = document.getElementById('ak_' + f);
         if (el && el.value.trim()) payload[f] = el.value.trim();
       });
+
+      if (Object.keys(payload).length === 0) {
+        btnText.textContent = '💾 Save Keys';
+        saveBtn.disabled = false;
+        showToast('⚠️ Please enter at least one API key', 'error');
+        return;
+      }
+
       try {
         await apiFetch('/api/config/keys', 'POST', payload);
         btnText.textContent = '💾 Save Keys';
+        saveBtn.disabled = false;
         const saved = document.getElementById('apiKeysSaved');
         if (saved) { saved.style.display = 'inline'; setTimeout(() => saved.style.display = 'none', 3000); }
+        showToast('✅ API keys saved & synced to users!', 'success');
       } catch (err) {
         btnText.textContent = '💾 Save Keys';
-        alert('Error: ' + err.message);
+        saveBtn.disabled = false;
+        showToast('❌ Save failed: ' + err.message, 'error');
       }
     });
   }
