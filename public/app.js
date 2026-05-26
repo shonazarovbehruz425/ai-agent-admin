@@ -662,37 +662,28 @@
   const API_KEY_FIELDS = ['openai_key','openai_model','anthropic_key','anthropic_model','gemini_key','gemini_model','openrouter_key','openrouter_model'];
 
   async function loadApiKeys() {
-    const form = document.getElementById('apiKeysForm');
-    if (!form) return;
-
-    // Always remove old listener and add fresh one
-    const newForm = form.cloneNode(true);
-    form.parentNode.replaceChild(newForm, form);
-
     // Load existing keys
     try {
       const keys = await apiFetch('/api/config/keys');
       API_KEY_FIELDS.forEach(f => {
-        const el = newForm.querySelector('#ak_' + f);
+        const el = document.getElementById('ak_' + f);
         if (el && keys[f]) el.value = keys[f];
       });
     } catch {}
 
-    // Bind submit
-    newForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+    // Bind save button (remove old listener first)
+    const saveBtn = document.getElementById('saveApiKeysBtn');
+    if (!saveBtn || saveBtn._bound) return;
+    saveBtn._bound = true;
 
-      const btnText = newForm.querySelector('#saveApiKeysBtnText');
-      const saveBtn = newForm.querySelector('#saveApiKeysBtn');
-      if (!btnText || !saveBtn) return;
-
+    saveBtn.addEventListener('click', async () => {
+      const btnText = document.getElementById('saveApiKeysBtnText');
       btnText.textContent = '⏳ Saving...';
       saveBtn.disabled = true;
 
       const payload = {};
       API_KEY_FIELDS.forEach(f => {
-        const el = newForm.querySelector('#ak_' + f);
+        const el = document.getElementById('ak_' + f);
         if (el && el.value.trim()) payload[f] = el.value.trim();
       });
 

@@ -246,7 +246,7 @@
             <h3>🔑 AI Provider API Keys</h3>
             <span style="font-size:11px;color:var(--t3)">Saved to server — synced to all users</span>
           </div>
-          <form id="apiKeysForm" style="padding:16px;display:flex;flex-direction:column;gap:14px">
+          <div id="apiKeysForm" style="padding:16px;display:flex;flex-direction:column;gap:14px">
             <div class="api-key-group">
               <label class="api-key-label" for="ak_openai_key">
                 <span class="prov-avatar" style="background:linear-gradient(135deg,#10a37f,#0d8068);width:22px;height:22px;font-size:10px">G</span>
@@ -307,12 +307,12 @@
               <input type="text" id="ak_openrouter_model" name="openrouter_model" class="api-key-input" placeholder="google/gemma-4-31b-it:free"/>
             </div>
             <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
-              <button type="submit" id="saveApiKeysBtn" class="btn-primary" style="min-width:120px">
+              <button type="button" id="saveApiKeysBtn" class="btn-primary" style="min-width:120px">
                 <span id="saveApiKeysBtnText">💾 Save Keys</span>
               </button>
               <span id="apiKeysSaved" style="font-size:12px;color:var(--green);display:none">✓ Saved & synced to users</span>
             </div>
-          </form>
+          </div>
         </div>
         <div class="card" style="max-width:640px;margin-top:14px">
           <div class="card-head"><h3>ℹ️ How it works</h3></div>
