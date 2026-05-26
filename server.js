@@ -206,7 +206,7 @@ app.post('/api/auth/register', async (req, res) => {
   if (exists) return res.status(409).json({ error: 'Bu email allaqachon ro\'yxatdan o\'tgan' });
 
   const hash = await bcrypt.hash(password, 10);
-  const result = db.prepare('INSERT INTO accounts (email, password_hash, name) VALUES (?, ?, ?)').run(email, hash, name || email.split('@')[0]);
+  const result = db.prepare('INSERT INTO accounts (email, password_hash, name, last_login) VALUES (?, ?, ?, ?)').run(email, hash, name || email.split('@')[0], Date.now());
 
   const token = jwt.sign({ accountId: result.lastInsertRowid, email }, JWT_SECRET, { expiresIn: '30d' });
   db.prepare('INSERT INTO user_sessions (account_id, token) VALUES (?, ?)').run(result.lastInsertRowid, token);
@@ -244,6 +244,7 @@ app.post('/api/auth/verify', (req, res) => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
+    db.prepare('UPDATE accounts SET last_login = ? WHERE id = ?').run(Date.now(), decoded.accountId);
     const account = db.prepare('SELECT id, email, name, status FROM accounts WHERE id = ?').get(decoded.accountId);
     if (!account) return res.status(401).json({ error: 'Foydalanuvchi topilmadi' });
     if (account.status === 'banned') return res.status(403).json({ error: 'Hisob bloklangan' });
@@ -281,7 +282,7 @@ app.delete('/api/accounts/:id', authMiddleware, (req, res) => {
 
 // ─── Analytics Ingestion (from extension) ────────────────
 app.post('/api/ingest', (req, res) => {
-  const { type, userId, provider, message, actions, success, error, url, date, time, timestamp } = req.body;
+  const { type, userId, email, provider, message, actions, success, error, url, date, time, timestamp } = req.body;
 
   if (!type || !userId) return res.status(400).json({ error: 'type va userId kerak' });
 
@@ -290,6 +291,10 @@ app.post('/api/ingest', (req, res) => {
   const eventTime = time || `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
   db.transaction(() => {
+    // Update real-time online status in accounts table
+    if (email) {
+      db.prepare('UPDATE accounts SET last_login = ? WHERE email = ?').run(Date.now(), email);
+    }
     // Insert event
     const result = stmts.insertEvent.run({
       type, userId, provider: provider || 'unknown',
