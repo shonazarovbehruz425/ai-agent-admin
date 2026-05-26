@@ -78,6 +78,11 @@
     document.getElementById('userSearch').addEventListener('input', debounce(() => loadUsers(1), 400));
     document.getElementById('filterDate').valueAsDate = new Date();
 
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    if (exportCsvBtn) {
+      exportCsvBtn.addEventListener('click', exportEventsCSV);
+    }
+
     // URL box click to copy
     document.getElementById('serverUrl').addEventListener('click', function() {
       navigator.clipboard.writeText(this.textContent).then(() => {
@@ -414,10 +419,24 @@
   // ─── Users ────────────────────────────────────────────
   async function loadUsers(page = 1) {
     const search = document.getElementById('userSearch').value;
+    const tbody = document.getElementById('usersBody');
+    
+    // Show premium skeleton loading state
+    tbody.innerHTML = Array(5).fill(0).map(() => `
+      <tr>
+        <td><div class="skeleton" style="width:20px;height:14px"></div></td>
+        <td><div class="skeleton" style="width:120px;height:14px"></div></td>
+        <td><div class="skeleton" style="width:100px;height:14px"></div></td>
+        <td><div class="skeleton" style="width:80px;height:14px"></div></td>
+        <td><div class="skeleton" style="width:90px;height:14px"></div></td>
+        <td><div class="skeleton" style="width:60px;height:16px;border-radius:10px"></div></td>
+        <td><div class="skeleton" style="width:140px;height:24px"></div></td>
+      </tr>
+    `).join('');
+
     try {
       const res = await apiFetch(`/api/accounts?search=${encodeURIComponent(search)}`);
       const now = Date.now();
-      const tbody = document.getElementById('usersBody');
       
       const filtered = search ? res.accounts.filter(u =>
         u.email.toLowerCase().includes(search.toLowerCase()) ||
@@ -447,6 +466,7 @@
       }).join('') : '<tr><td colspan="7" class="empty-cell">👤 No users</td></tr>';
     } catch (err) {
       console.error('Users load error:', err);
+      tbody.innerHTML = `<tr><td colspan="7" class="empty-cell" style="color:var(--red)">❌ Failed to load users: ${esc(err.message)}</td></tr>`;
     }
   }
 
@@ -468,10 +488,22 @@
   async function loadEvents(page = 1) {
     const provider = document.getElementById('filterProvider').value;
     const date = document.getElementById('filterDate').value;
+    const tbody = document.getElementById('eventsBody');
     
+    // Show premium skeleton loading state
+    tbody.innerHTML = Array(8).fill(0).map(() => `
+      <tr>
+        <td><div class="skeleton" style="width:110px;height:14px"></div></td>
+        <td><div class="skeleton" style="width:70px;height:14px"></div></td>
+        <td><div class="skeleton" style="width:70px;height:14px"></div></td>
+        <td><div class="skeleton" style="width:180px;height:14px"></div></td>
+        <td><div class="skeleton" style="width:20px;height:14px"></div></td>
+        <td><div class="skeleton" style="width:50px;height:16px;border-radius:10px"></div></td>
+      </tr>
+    `).join('');
+
     try {
       const res = await apiFetch(`/api/events?page=${page}&limit=50&provider=${provider}&date=${date}`);
-      const tbody = document.getElementById('eventsBody');
       
       tbody.innerHTML = res.events.length ? res.events.map((e, i) => {
         const provInfo = PROVIDERS[e.provider] || PROVIDERS.unknown;
@@ -479,7 +511,10 @@
           <tr style="animation: pageSlide 0.3s ease ${i * 0.02}s both">
             <td style="font-size:11px;color:var(--text-tertiary);font-family:var(--mono)">${e.date} ${e.time}</td>
             <td style="font-family:var(--mono);font-size:11px">${esc(e.user_id || '').slice(0,12)}</td>
-            <td><span style="color:${provInfo.color};font-weight:600">${provInfo.name}</span></td>
+            <td>
+              <span style="color:${provInfo.color};font-weight:600">${provInfo.name}</span>
+              ${e.latency ? `<br/><span style="font-size:10px;color:var(--text-tertiary);font-family:var(--mono)">⚡ ${e.latency}ms</span>` : ''}
+            </td>
             <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(e.message || '')}">${esc(e.message || '')}</td>
             <td><span style="font-weight:700">${e.actions || 0}</span></td>
             <td><span class="badge ${e.success ? 'success' : 'error'}">${e.success ? '✅ OK' : '❌ Error'}</span></td>
@@ -489,6 +524,7 @@
       renderPagination('eventsPagination', page, Math.ceil(res.total / 50), loadEvents);
     } catch (err) {
       console.error('Events load error:', err);
+      tbody.innerHTML = `<tr><td colspan="6" class="empty-cell" style="color:var(--red)">❌ Failed to load events: ${esc(err.message)}</td></tr>`;
     }
   }
 
@@ -560,6 +596,72 @@
       showToast('📥 Data exported!', 'success');
     } catch (err) {
       showToast('❌ Export failed', 'error');
+    }
+  }
+
+  // ─── CSV Export Actions ────────────────────────────────
+  function convertEventsToCSV(events) {
+    const headers = ['ID', 'Date', 'Time', 'User ID', 'Provider', 'Type', 'Message', 'Actions', 'Success', 'Error', 'Latency'];
+    const rows = [headers];
+
+    events.forEach(e => {
+      rows.push([
+        e.id || '',
+        e.date || '',
+        e.time || '',
+        e.user_id || e.userId || '',
+        e.provider || '',
+        e.type || '',
+        e.message || '',
+        e.actions || 0,
+        e.success ? 'Success' : 'Error',
+        e.error || '',
+        e.latency || 0
+      ]);
+    });
+
+    return rows.map(row => 
+      row.map(val => {
+        let cell = String(val === null || val === undefined ? '' : val).replace(/"/g, '""');
+        if (cell.includes(',') || cell.includes('"') || cell.includes('\n') || cell.includes('\r')) {
+          cell = `"${cell}"`;
+        }
+        return cell;
+      }).join(',')
+    ).join('\r\n');
+  }
+
+  async function exportEventsCSV() {
+    const provider = document.getElementById('filterProvider').value;
+    const date = document.getElementById('filterDate').value;
+    const btn = document.getElementById('exportCsvBtn');
+    
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Exporting...';
+
+    try {
+      const res = await apiFetch(`/api/events?limit=10000&provider=${provider}&date=${date}`);
+      if (!res.events || !res.events.length) {
+        showToast('⚠️ No events to export', 'error');
+        return;
+      }
+      
+      const csvContent = convertEventsToCSV(res.events);
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ai-agent-events-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('📥 CSV logs exported successfully!', 'success');
+    } catch (err) {
+      console.error('CSV Export error:', err);
+      showToast('❌ CSV Export failed: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
     }
   }
 
