@@ -63,6 +63,9 @@
         <button type="button" class="nav-item" data-page="settings">
           <span aria-hidden="true">⚙️</span> Settings
         </button>
+        <button type="button" class="nav-item" data-page="apikeys">
+          <span aria-hidden="true">🔑</span> API Keys
+        </button>
       </nav>
       <div class="sidebar-footer">
         <div class="conn-status" id="connStatus" role="status" aria-live="polite">
@@ -232,6 +235,91 @@
         </header>
         <div id="liveFeed" class="live-feed" role="log" aria-live="polite" aria-label="Live events feed">
           <p class="empty-msg">Waiting for events...</p>
+        </div>
+      </section>
+
+      <!-- API KEYS PAGE -->
+      <section class="page" id="page-apikeys" aria-labelledby="apiTitle" hidden>
+        <h2 id="apiTitle" class="visually-hidden">API Keys</h2>
+        <div class="card" style="max-width:640px">
+          <div class="card-head">
+            <h3>🔑 AI Provider API Keys</h3>
+            <span style="font-size:11px;color:var(--t3)">Saved to server — synced to all users</span>
+          </div>
+          <form id="apiKeysForm" style="padding:16px;display:flex;flex-direction:column;gap:14px">
+            <div class="api-key-group">
+              <label class="api-key-label" for="ak_openai_key">
+                <span class="prov-avatar" style="background:linear-gradient(135deg,#10a37f,#0d8068);width:22px;height:22px;font-size:10px">G</span>
+                OpenAI API Key
+              </label>
+              <input type="password" id="ak_openai_key" name="openai_key" class="api-key-input" placeholder="sk-proj-..."/>
+            </div>
+            <div class="api-key-group">
+              <label class="api-key-label" for="ak_openai_model">OpenAI Model</label>
+              <select id="ak_openai_model" name="openai_model" class="filter-select" style="width:100%">
+                <option value="gpt-4o">GPT-4o</option>
+                <option value="gpt-4o-mini">GPT-4o Mini</option>
+                <option value="gpt-4-turbo">GPT-4 Turbo</option>
+              </select>
+            </div>
+            <hr style="border-color:var(--border)"/>
+            <div class="api-key-group">
+              <label class="api-key-label" for="ak_anthropic_key">
+                <span class="prov-avatar" style="background:linear-gradient(135deg,#d97757,#c25a3e);width:22px;height:22px;font-size:10px">C</span>
+                Anthropic API Key
+              </label>
+              <input type="password" id="ak_anthropic_key" name="anthropic_key" class="api-key-input" placeholder="sk-ant-..."/>
+            </div>
+            <div class="api-key-group">
+              <label class="api-key-label" for="ak_anthropic_model">Claude Model</label>
+              <select id="ak_anthropic_model" name="anthropic_model" class="filter-select" style="width:100%">
+                <option value="claude-opus-4-5">Claude Opus 4.5</option>
+                <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
+                <option value="claude-haiku-3-5">Claude Haiku 3.5</option>
+              </select>
+            </div>
+            <hr style="border-color:var(--border)"/>
+            <div class="api-key-group">
+              <label class="api-key-label" for="ak_gemini_key">
+                <span class="prov-avatar" style="background:linear-gradient(135deg,#4285f4,#1a73e8);width:22px;height:22px;font-size:10px">G</span>
+                Gemini API Key
+              </label>
+              <input type="password" id="ak_gemini_key" name="gemini_key" class="api-key-input" placeholder="AIza..."/>
+            </div>
+            <div class="api-key-group">
+              <label class="api-key-label" for="ak_gemini_model">Gemini Model</label>
+              <select id="ak_gemini_model" name="gemini_model" class="filter-select" style="width:100%">
+                <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite</option>
+                <option value="gemini-3.1-flash">Gemini 3.1 Flash</option>
+                <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+              </select>
+            </div>
+            <hr style="border-color:var(--border)"/>
+            <div class="api-key-group">
+              <label class="api-key-label" for="ak_openrouter_key">
+                <span class="prov-avatar" style="background:linear-gradient(135deg,#ec4899,#be185d);width:22px;height:22px;font-size:10px">R</span>
+                OpenRouter API Key
+              </label>
+              <input type="password" id="ak_openrouter_key" name="openrouter_key" class="api-key-input" placeholder="sk-or-v1-..."/>
+            </div>
+            <div class="api-key-group">
+              <label class="api-key-label" for="ak_openrouter_model">OpenRouter Model</label>
+              <input type="text" id="ak_openrouter_model" name="openrouter_model" class="api-key-input" placeholder="google/gemma-4-31b-it:free"/>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+              <button type="submit" id="saveApiKeysBtn" class="btn-primary" style="min-width:120px">
+                <span id="saveApiKeysBtnText">💾 Save Keys</span>
+              </button>
+              <span id="apiKeysSaved" style="font-size:12px;color:var(--green);display:none">✓ Saved & synced to users</span>
+            </div>
+          </form>
+        </div>
+        <div class="card" style="max-width:640px;margin-top:14px">
+          <div class="card-head"><h3>ℹ️ How it works</h3></div>
+          <div style="padding:14px 18px;font-size:13px;color:var(--t2);line-height:1.7">
+            <p>API keys saved here are automatically synced to all extension users when they open the extension.</p>
+            <p style="margin-top:8px">Users don't need to enter API keys themselves — you manage them centrally from this panel.</p>
+          </div>
         </div>
       </section>
 

@@ -215,6 +215,7 @@
       case 'providers': renderProviders(stats); break;
       case 'events':    loadEvents(1); break;
       case 'settings':  loadApiSettings(); break;
+      case 'apikeys':   loadApiKeys(); break;
     }
   }
 
@@ -656,6 +657,42 @@
     } catch (err) {
       console.error('API Settings load error:', err);
     }
+  }
+
+  // ─── API Keys page (simple) ───────────────────────────
+  const API_KEY_FIELDS = ['openai_key','openai_model','anthropic_key','anthropic_model','gemini_key','gemini_model','openrouter_key','openrouter_model'];
+
+  async function loadApiKeys() {
+    try {
+      const keys = await apiFetch('/api/config/keys');
+      API_KEY_FIELDS.forEach(f => {
+        const el = document.getElementById('ak_' + f);
+        if (el && keys[f]) el.value = keys[f];
+      });
+    } catch {}
+
+    const form = document.getElementById('apiKeysForm');
+    if (!form || form._bound) return;
+    form._bound = true;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btnText = document.getElementById('saveApiKeysBtnText');
+      btnText.textContent = '⏳ Saving...';
+      const payload = {};
+      API_KEY_FIELDS.forEach(f => {
+        const el = document.getElementById('ak_' + f);
+        if (el && el.value.trim()) payload[f] = el.value.trim();
+      });
+      try {
+        await apiFetch('/api/config/keys', 'POST', payload);
+        btnText.textContent = '💾 Save Keys';
+        const saved = document.getElementById('apiKeysSaved');
+        if (saved) { saved.style.display = 'inline'; setTimeout(() => saved.style.display = 'none', 3000); }
+      } catch (err) {
+        btnText.textContent = '💾 Save Keys';
+        alert('Error: ' + err.message);
+      }
+    });
   }
 
   function setOllamaMode(mode) {
