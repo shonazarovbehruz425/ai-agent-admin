@@ -206,7 +206,8 @@
       providers: 'AI Providers',
       events: 'Events log',
       live: 'Real-time',
-      settings: 'Settings'
+      settings: 'Settings',
+      apikeys: 'API Keys'
     }[page] || page;
 
     switch(page) {
@@ -728,8 +729,9 @@
       </div>
     `;
 
-    // Bind save button
-    document.getElementById('saveApiKeysBtn').addEventListener('click', saveApiKeys_new);
+    // Bind save button — use onclick to avoid duplicates
+    const saveBtn = document.getElementById('saveApiKeysBtn');
+    if (saveBtn) saveBtn.onclick = saveApiKeys_new;
   }
 
   window.toggleKeyVisibility = (inputId, btn) => {
