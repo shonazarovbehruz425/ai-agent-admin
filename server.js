@@ -33,7 +33,8 @@ db.exec(`
     date TEXT,
     time TEXT,
     timestamp INTEGER,
-    created_at INTEGER DEFAULT (strftime('%s','now'))
+    created_at INTEGER DEFAULT (strftime('%s','now')),
+    latency INTEGER DEFAULT 0
   );
 
   CREATE TABLE IF NOT EXISTS users (
@@ -78,11 +79,25 @@ db.exec(`
   );
 `);
 
+// Try migrating legacy DB by adding latency column dynamically
+try {
+  db.exec("ALTER TABLE events ADD COLUMN latency INTEGER DEFAULT 0");
+} catch (e) {
+  // Column already exists, ignore
+}
+
+// Create database indexes for high-speed lookups
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events (timestamp DESC);
+  CREATE INDEX IF NOT EXISTS idx_events_provider ON events (provider);
+  CREATE INDEX IF NOT EXISTS idx_events_user_id ON events (user_id);
+`);
+
 // Prepared statements
 const stmts = {
   insertEvent: db.prepare(`
-    INSERT INTO events (type, user_id, provider, message, actions, success, error, url, date, time, timestamp)
-    VALUES (@type, @userId, @provider, @message, @actions, @success, @error, @url, @date, @time, @timestamp)
+    INSERT INTO events (type, user_id, provider, message, actions, success, error, url, date, time, timestamp, latency)
+    VALUES (@type, @userId, @provider, @message, @actions, @success, @error, @url, @date, @time, @timestamp, @latency)
   `),
   upsertUser: db.prepare(`
     INSERT INTO users (user_id, first_seen, last_active, request_count, main_provider)
@@ -282,7 +297,7 @@ app.delete('/api/accounts/:id', authMiddleware, (req, res) => {
 
 // ─── Analytics Ingestion (from extension) ────────────────
 app.post('/api/ingest', (req, res) => {
-  const { type, userId, email, provider, message, actions, success, error, url, date, time, timestamp } = req.body;
+  const { type, userId, email, provider, message, actions, success, error, url, date, time, timestamp, latency } = req.body;
 
   if (!type || !userId) return res.status(400).json({ error: 'type va userId kerak' });
 
@@ -304,7 +319,8 @@ app.post('/api/ingest', (req, res) => {
       error: error ? error.slice(0, 200) : null,
       url: url || null,
       date: eventDate, time: eventTime,
-      timestamp: timestamp || Date.now()
+      timestamp: timestamp || Date.now(),
+      latency: parseInt(latency) || 0
     });
 
     // Upsert user
