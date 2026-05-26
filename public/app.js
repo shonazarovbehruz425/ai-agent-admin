@@ -658,55 +658,124 @@
     }
   }
 
-  // ─── API Keys page (simple) ───────────────────────────
-  const API_KEY_FIELDS = ['openai_key','openai_model','anthropic_key','anthropic_model','gemini_key','gemini_model','openrouter_key','openrouter_model'];
+  // ─── API Keys page ────────────────────────────────────
+  const PROVIDERS_CONFIG = [
+    { id: 'openai',      label: 'OpenAI',      letter: 'G', bg: 'linear-gradient(135deg,#10a37f,#0d8068)', keyField: 'openai_key',      keyPlaceholder: 'sk-proj-...',        modelField: 'openai_model',      models: ['gpt-4o','gpt-4o-mini','gpt-4-turbo'] },
+    { id: 'anthropic',   label: 'Anthropic',   letter: 'C', bg: 'linear-gradient(135deg,#d97757,#c25a3e)', keyField: 'anthropic_key',   keyPlaceholder: 'sk-ant-...',         modelField: 'anthropic_model',   models: ['claude-opus-4-5','claude-sonnet-4-5','claude-haiku-3-5'] },
+    { id: 'gemini',      label: 'Gemini',      letter: 'G', bg: 'linear-gradient(135deg,#4285f4,#1a73e8)', keyField: 'gemini_key',      keyPlaceholder: 'AIza...',            modelField: 'gemini_model',      models: ['gemini-3.1-flash-lite','gemini-3.1-flash','gemini-2.0-flash'] },
+    { id: 'openrouter',  label: 'OpenRouter',  letter: 'R', bg: 'linear-gradient(135deg,#ec4899,#be185d)', keyField: 'openrouter_key',  keyPlaceholder: 'sk-or-v1-...',       modelField: 'openrouter_model',  models: null },
+  ];
 
   async function loadApiKeys() {
-    // Load existing keys
-    try {
-      const keys = await apiFetch('/api/config/keys');
-      API_KEY_FIELDS.forEach(f => {
-        const el = document.getElementById('ak_' + f);
-        if (el && keys[f]) el.value = keys[f];
-      });
-    } catch {}
+    const container = document.getElementById('apiKeysContainer');
+    if (!container) return;
 
-    // Bind save button (remove old listener first)
-    const saveBtn = document.getElementById('saveApiKeysBtn');
-    if (!saveBtn || saveBtn._bound) return;
-    saveBtn._bound = true;
+    // Load current keys
+    let currentKeys = {};
+    try { currentKeys = await apiFetch('/api/config/keys'); } catch {}
 
-    saveBtn.addEventListener('click', async () => {
-      const btnText = document.getElementById('saveApiKeysBtnText');
-      btnText.textContent = '⏳ Saving...';
-      saveBtn.disabled = true;
+    // Render UI
+    container.innerHTML = `
+      <div style="max-width:640px">
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-head">
+            <h3>🔑 AI Provider API Keys</h3>
+            <span style="font-size:11px;color:var(--t3)">Synced to all extension users</span>
+          </div>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:0">
+            ${PROVIDERS_CONFIG.map((p, i) => `
+              <div style="padding:16px 0;${i > 0 ? 'border-top:1px solid var(--border)' : ''}">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+                  <div style="width:32px;height:32px;border-radius:8px;background:${p.bg};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0">${p.letter}</div>
+                  <div style="font-size:14px;font-weight:600;color:var(--t1)">${p.label}</div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <div style="position:relative">
+                    <input
+                      type="password"
+                      id="ak_${p.keyField}"
+                      class="api-key-input"
+                      placeholder="${p.keyPlaceholder}"
+                      value="${esc(currentKeys[p.keyField] || '')}"
+                      style="padding-right:40px"
+                    />
+                    <button type="button" onclick="toggleKeyVisibility('ak_${p.keyField}', this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--t3);font-size:14px">👁</button>
+                  </div>
+                  ${p.models ? `
+                    <select id="ak_${p.modelField}" class="filter-select" style="width:100%">
+                      ${p.models.map(m => `<option value="${m}" ${currentKeys[p.modelField] === m ? 'selected' : ''}>${m}</option>`).join('')}
+                    </select>
+                  ` : `
+                    <input type="text" id="ak_${p.modelField}" class="api-key-input" placeholder="e.g. google/gemma-4-31b-it:free" value="${esc(currentKeys[p.modelField] || '')}"/>
+                  `}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <div style="padding:14px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:12px">
+            <button type="button" id="saveApiKeysBtn" class="btn-primary" style="min-width:130px">💾 Save All Keys</button>
+            <span id="apiKeysSavedMsg" style="font-size:12px;color:var(--green);display:none">✓ Saved & synced to all users</span>
+            <span id="apiKeysErrMsg" style="font-size:12px;color:var(--red);display:none"></span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>ℹ️ How it works</h3></div>
+          <div style="padding:14px 18px;font-size:13px;color:var(--t2);line-height:1.8">
+            <p>API keys saved here are <strong>automatically synced</strong> to all extension users when they open the extension.</p>
+            <p style="margin-top:6px">Users don't need to enter API keys themselves — you manage them centrally from this panel.</p>
+          </div>
+        </div>
+      </div>
+    `;
 
-      const payload = {};
-      API_KEY_FIELDS.forEach(f => {
-        const el = document.getElementById('ak_' + f);
-        if (el && el.value.trim()) payload[f] = el.value.trim();
-      });
+    // Bind save button
+    document.getElementById('saveApiKeysBtn').addEventListener('click', saveApiKeys_new);
+  }
 
-      if (Object.keys(payload).length === 0) {
-        btnText.textContent = '💾 Save Keys';
-        saveBtn.disabled = false;
-        showToast('⚠️ Please enter at least one API key', 'error');
-        return;
-      }
+  window.toggleKeyVisibility = (inputId, btn) => {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    input.type = input.type === 'password' ? 'text' : 'password';
+    btn.textContent = input.type === 'password' ? '👁' : '🙈';
+  };
 
-      try {
-        await apiFetch('/api/config/keys', 'POST', payload);
-        btnText.textContent = '💾 Save Keys';
-        saveBtn.disabled = false;
-        const saved = document.getElementById('apiKeysSaved');
-        if (saved) { saved.style.display = 'inline'; setTimeout(() => saved.style.display = 'none', 3000); }
-        showToast('✅ API keys saved & synced!', 'success');
-      } catch (err) {
-        btnText.textContent = '💾 Save Keys';
-        saveBtn.disabled = false;
-        showToast('❌ Save failed: ' + err.message, 'error');
-      }
+  async function saveApiKeys_new() {
+    const btn = document.getElementById('saveApiKeysBtn');
+    const savedMsg = document.getElementById('apiKeysSavedMsg');
+    const errMsg = document.getElementById('apiKeysErrMsg');
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Saving...';
+    if (savedMsg) savedMsg.style.display = 'none';
+    if (errMsg) errMsg.style.display = 'none';
+
+    const payload = {};
+    PROVIDERS_CONFIG.forEach(p => {
+      const keyEl = document.getElementById('ak_' + p.keyField);
+      const modelEl = document.getElementById('ak_' + p.modelField);
+      if (keyEl && keyEl.value.trim()) payload[p.keyField] = keyEl.value.trim();
+      if (modelEl && modelEl.value.trim()) payload[p.modelField] = modelEl.value.trim();
     });
+
+    if (Object.keys(payload).length === 0) {
+      btn.disabled = false;
+      btn.textContent = '💾 Save All Keys';
+      if (errMsg) { errMsg.textContent = '⚠️ Enter at least one API key'; errMsg.style.display = 'inline'; }
+      return;
+    }
+
+    try {
+      await apiFetch('/api/config/keys', 'POST', payload);
+      btn.disabled = false;
+      btn.textContent = '💾 Save All Keys';
+      if (savedMsg) { savedMsg.style.display = 'inline'; setTimeout(() => savedMsg.style.display = 'none', 4000); }
+      showToast('✅ API keys saved & synced to all users!', 'success');
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = '💾 Save All Keys';
+      if (errMsg) { errMsg.textContent = '❌ ' + err.message; errMsg.style.display = 'inline'; }
+      showToast('❌ Save failed: ' + err.message, 'error');
+    }
   }
 
   function setOllamaMode(mode) {
