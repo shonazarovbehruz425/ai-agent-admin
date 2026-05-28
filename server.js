@@ -13,8 +13,22 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
-const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'secret';
+function cleanEnvVar(val, fallback) {
+  if (val === undefined || val === null) return fallback;
+  let s = String(val).trim();
+  if (s.startsWith('"') && s.endsWith('"')) {
+    s = s.slice(1, -1);
+  }
+  if (s.startsWith("'") && s.endsWith("'")) {
+    s = s.slice(1, -1);
+  }
+  return s.trim();
+}
+
+const PORT = cleanEnvVar(process.env.PORT, 3000);
+const JWT_SECRET = cleanEnvVar(process.env.JWT_SECRET, 'secret');
+const ADMIN_USERNAME = cleanEnvVar(process.env.ADMIN_USERNAME, 'admin');
+const ADMIN_PASSWORD = cleanEnvVar(process.env.ADMIN_PASSWORD, 'admin123');
 
 // ─── Database setup ──────────────────────────────────────
 const db = new Database(path.join(__dirname, 'data.db'));
@@ -199,10 +213,26 @@ function authMiddleware(req, res, next) {
 }
 
 // ─── Auth Routes ─────────────────────────────────────────
+app.get('/api/diag', (req, res) => {
+  const rawUser = process.env.ADMIN_USERNAME;
+  const rawPass = process.env.ADMIN_PASSWORD;
+  res.json({
+    user_set: !!rawUser,
+    user_len: rawUser ? rawUser.length : 0,
+    user_is_admin: rawUser === 'admin',
+    pass_set: !!rawPass,
+    pass_len: rawPass ? rawPass.length : 0,
+    pass_is_admin123: rawPass === 'admin123',
+    cleaned_user: ADMIN_USERNAME,
+    cleaned_pass_len: ADMIN_PASSWORD.length,
+    node_version: process.version
+  });
+});
+
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
-  const validUser = username === (process.env.ADMIN_USERNAME || 'admin');
-  const validPass = password === (process.env.ADMIN_PASSWORD || 'admin123');
+  const validUser = username === ADMIN_USERNAME;
+  const validPass = password === ADMIN_PASSWORD;
 
   if (!validUser || !validPass) {
     return res.status(401).json({ error: 'Login yoki parol xato' });
@@ -512,7 +542,7 @@ server.listen(PORT, () => {
 ╔══════════════════════════════════════╗
 ║  AI Agent Admin Panel               ║
 ║  http://localhost:${PORT}                ║
-║  Login: ${process.env.ADMIN_USERNAME || 'admin'} / ${process.env.ADMIN_PASSWORD || 'admin123'}         ║
+║  Login: ${ADMIN_USERNAME} / ${ADMIN_PASSWORD}         ║
 ╚══════════════════════════════════════╝
   `);
 });
