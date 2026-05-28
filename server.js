@@ -174,11 +174,14 @@ app.get('/robots.txt', (req, res) => {
   res.send('User-agent: *\nDisallow: /api/\nAllow: /\n');
 });
 
-app.use(express.static(path.join(__dirname, 'public'), {
-  maxAge: '1y',
+// Admin panel statik fayllarini serve qilish
+// index.html, admin.js, admin.css — bularning hammasi __dirname da
+app.use(express.static(__dirname, {
+  maxAge: '0',  // Admin panelni cache qilmaymiz
+  index: false, // Auto index.html yubormaslik (login orqali boshqaramiz)
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     }
   }
 }));
@@ -498,9 +501,9 @@ io.on('connection', (socket) => {
   });
 });
 
-// ─── Serve admin panel ────────────────────────────────────
+// Admin panel HTML ni serve qilish
 app.get('/{*path}', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // ─── Start ────────────────────────────────────────────────
