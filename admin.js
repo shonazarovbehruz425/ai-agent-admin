@@ -19,7 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const saved = sessionStorage.getItem('admin_token');
   if (saved) {
     authToken = saved;
-    showPanel();
+    // Token bor — panel HTML allaqachon index.html da, to'g'ridan ishlatamiz
+    initPanel();
   } else {
     showLogin();
   }
@@ -74,11 +75,17 @@ async function doLogin() {
       body:    JSON.stringify({ username, password }),
     });
     const data = await res.json();
-    if (!res.ok) { errEl.textContent = data.error || 'Login xato'; btn.textContent = 'Kirish'; btn.disabled = false; return; }
+    if (!res.ok) {
+      errEl.textContent = data.error || 'Login xato';
+      btn.textContent   = 'Kirish';
+      btn.disabled      = false;
+      return;
+    }
 
-    authToken = data.token;
-    sessionStorage.setItem('admin_token', authToken);
-    showPanel();
+    // Token saqlash va sahifani qayta yuklash
+    // (body loginForm HTML bilan almashtirilgan — reload qilmasak panel topa olmaydi)
+    sessionStorage.setItem('admin_token', data.token);
+    window.location.reload();
   } catch (e) {
     errEl.textContent = 'Server bilan ulanib bo\'lmadi';
     btn.textContent   = 'Kirish';
@@ -87,15 +94,35 @@ async function doLogin() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// PANEL — Asosiy kontent
-// ═══════════════════════════════════════════════════════════════════════
-function showPanel() {
-  // Panel HTML ni index.html dan yuklaymiz (allaqachon bor)
-  // admin.js panel ichida ishlaydi — faqat data yuklaymiz
+// Panel ishga tushirish (token bor, index.html HTML to'liq yuklangan)
+function initPanel() {
   setupNavigation();
   setupFilters();
+  addLogoutButton();
   connectSocket();
   loadAllData();
+}
+
+// Chiqish tugmasi qo'shish
+function addLogoutButton() {
+  const footer = document.querySelector('.sidebar-footer');
+  if (!footer || document.getElementById('logoutBtn')) return;
+  const btn = document.createElement('button');
+  btn.id        = 'logoutBtn';
+  btn.textContent = '🚪 Chiqish';
+  btn.style.cssText = 'width:100%;margin-top:10px;padding:8px;background:transparent;border:1px solid #333;border-radius:8px;color:#888;font-size:12px;cursor:pointer;font-family:Inter,sans-serif;';
+  btn.addEventListener('click', () => {
+    sessionStorage.removeItem('admin_token');
+    window.location.reload();
+  });
+  footer.appendChild(btn);
+}
+
+// Eski showPanel — endi faqat showLogin'dan keyin chaqirilmaydi
+function showPanel() {
+  // Bu funksiya faqat login reload dan keyin ishlaydi
+  // (DOMContentLoaded → initPanel)
+  initPanel();
 }
 
 // ─── Navigation ──────────────────────────────────────────────────────────
