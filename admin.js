@@ -41,7 +41,7 @@ function showLogin() {
         <input type="password" id="loginPass" placeholder="Parol" autocomplete="current-password"
           style="width:100%;box-sizing:border-box;padding:12px 14px;background:#111;border:1px solid #333;border-radius:10px;color:#fff;font-size:14px;font-family:Inter,sans-serif;outline:none;margin-bottom:16px;">
 
-        <button id="loginBtn" onclick="doLogin()"
+        <button id="loginBtn"
           style="width:100%;padding:12px;background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;">
           Kirish
         </button>
@@ -49,6 +49,8 @@ function showLogin() {
       </div>
     </div>
   `;
+  // CSP: inline onclick ISHLAMAYDI — addEventListener ishlatamiz
+  document.getElementById('loginBtn').addEventListener('click', doLogin);
   document.getElementById('loginPass').addEventListener('keydown', e => {
     if (e.key === 'Enter') doLogin();
   });
@@ -298,15 +300,12 @@ function renderWeeklyChart(weekly) {
 // ACCOUNTS — Ro'yxatdan o'tgan foydalanuvchilar
 // ═══════════════════════════════════════════════════════════════════════
 function renderAccounts() {
-  // Accounts jadvalini topish (users page ichida ko'rsatamiz)
   let tbody = document.getElementById('accountsTableBody');
 
-  // Agar accounts jadval yo'q bo'lsa — users page ga qo'shamiz
   if (!tbody) {
     const usersSection = document.getElementById('page-users');
     if (!usersSection) return;
 
-    // Accounts card qo'shish
     const accountsCard = document.createElement('div');
     accountsCard.className = 'card';
     accountsCard.style.marginTop = '18px';
@@ -337,6 +336,16 @@ function renderAccounts() {
     `;
     usersSection.appendChild(accountsCard);
     tbody = document.getElementById('accountsTableBody');
+
+    // Event delegation — CSP sababli inline onclick ishlatmaymiz
+    tbody.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const id     = btn.dataset.id;
+      if (action === 'ban')    toggleBan(parseInt(id), btn.dataset.status);
+      if (action === 'delete') deleteAccount(parseInt(id));
+    });
   }
 
   const accounts = allData.accounts || [];
@@ -349,8 +358,9 @@ function renderAccounts() {
 
   tbody.innerHTML = accounts.map(acc => {
     const created   = acc.created_at ? new Date(acc.created_at * 1000).toLocaleDateString('uz') : '—';
-    const lastLogin = acc.last_login ? timeAgo(acc.last_login) : '—';
+    const lastLogin = acc.last_login  ? timeAgo(acc.last_login) : '—';
     const isBanned  = acc.status === 'banned';
+    const newStatus = isBanned ? 'active' : 'banned';
     return `
       <tr>
         <td style="font-weight:500">${escHtml(acc.email)}</td>
@@ -359,11 +369,11 @@ function renderAccounts() {
         <td>${created}</td>
         <td>${lastLogin}</td>
         <td>
-          <button onclick="toggleBan(${acc.id},'${isBanned ? 'active' : 'banned'}')"
+          <button data-action="ban" data-id="${acc.id}" data-status="${newStatus}"
             style="padding:4px 10px;border-radius:6px;border:1px solid ${isBanned ? '#22c55e44' : '#ef444444'};background:transparent;color:${isBanned ? '#22c55e' : '#ef4444'};font-size:11px;cursor:pointer;font-family:Inter,sans-serif">
             ${isBanned ? '✅ Faollashtir' : '🚫 Bloklash'}
           </button>
-          <button onclick="deleteAccount(${acc.id})"
+          <button data-action="delete" data-id="${acc.id}"
             style="margin-left:4px;padding:4px 10px;border-radius:6px;border:1px solid #33333388;background:transparent;color:#888;font-size:11px;cursor:pointer;font-family:Inter,sans-serif">
             🗑️
           </button>
