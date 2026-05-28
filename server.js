@@ -172,10 +172,10 @@ app.use((req, res, next) => {
   );
   // HSTS — strong policy
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
-  // Cache control for HTML
-  if (req.path === '/' || req.path.endsWith('.html')) {
+  // Cache control for HTML and main application JS/CSS
+  if (req.path === '/' || req.path.endsWith('.html') || /\.(js|css)$/.test(req.path)) {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  } else if (/\.(js|css|png|jpg|svg|woff2?)$/.test(req.path)) {
+  } else if (/\.(png|jpg|svg|woff2?)$/.test(req.path)) {
     // Long cache for static assets
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
   }
