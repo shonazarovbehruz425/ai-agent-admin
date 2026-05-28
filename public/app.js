@@ -89,6 +89,37 @@
         showToast('📋 URL copied!', 'success');
       });
     });
+
+    // Event delegation for users actions (CSP compliant)
+    const usersBody = document.getElementById('usersBody');
+    if (usersBody) {
+      usersBody.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-action]');
+        if (!btn) return;
+        const action = btn.dataset.action;
+        const id = parseInt(btn.dataset.id);
+        const status = btn.dataset.status;
+        if (action === 'ban') {
+          toggleBan(id, status);
+        } else if (action === 'delete') {
+          deleteAccount(id);
+        }
+      });
+    }
+
+    // Event delegation for API key visibility toggling (CSP compliant)
+    const apiKeysContainer = document.getElementById('apiKeysContainer');
+    if (apiKeysContainer) {
+      apiKeysContainer.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-action="toggle-visibility"]');
+        if (!btn) return;
+        const targetId = btn.dataset.target;
+        const input = document.getElementById(targetId);
+        if (!input) return;
+        input.type = input.type === 'password' ? 'text' : 'password';
+        btn.textContent = input.type === 'password' ? '👁' : '🙈';
+      });
+    }
   });
 
   // ─── Auth ─────────────────────────────────────────────
@@ -457,10 +488,10 @@
             <td><span class="badge ${u.status === 'banned' ? 'error' : isOnline ? 'online' : 'offline'}">${u.status === 'banned' ? '🚫 Banned' : isOnline ? '🟢 Online' : '⚫ Offline'}</span></td>
             <td style="display:flex;gap:6px">
               ${u.status === 'banned'
-                ? `<button class="btn-ghost" onclick="toggleBan(${u.id},'active')">✅ Activate</button>`
-                : `<button class="btn-danger-sm" onclick="toggleBan(${u.id},'banned')">🚫 Block</button>`
+                ? `<button class="btn-ghost" data-action="ban" data-id="${u.id}" data-status="active">✅ Activate</button>`
+                : `<button class="btn-danger-sm" data-action="ban" data-id="${u.id}" data-status="banned">🚫 Block</button>`
               }
-              <button class="btn-danger-sm" onclick="deleteAccount(${u.id})" data-tooltip="Delete">🗑</button>
+              <button class="btn-danger-sm" data-action="delete" data-id="${u.id}" data-tooltip="Delete">🗑</button>
             </td>
           </tr>`;
       }).join('') : '<tr><td colspan="7" class="empty-cell">👤 No users</td></tr>';
@@ -470,14 +501,14 @@
     }
   }
 
-  window.toggleBan = async (id, status) => {
+  const toggleBan = async (id, status) => {
     if (!confirm(status === 'banned' ? '⚠️ Are you sure you want to block this user?' : '✅ Are you sure you want to activate this user?')) return;
     await apiFetch(`/api/accounts/${id}`, 'PATCH', { status });
     showToast(status === 'banned' ? '🚫 User blocked' : '✅ User activated', status === 'banned' ? 'error' : 'success');
     loadUsers();
   };
 
-  window.deleteAccount = async (id) => {
+  const deleteAccount = async (id) => {
     if (!confirm('⚠️ Are you sure you want to delete this user? This action cannot be undone!')) return;
     await apiFetch(`/api/accounts/${id}`, 'DELETE');
     showToast('🗑 User deleted', 'success');
@@ -802,7 +833,7 @@
                       value="${esc(currentKeys[p.keyField] || '')}"
                       style="padding-right:40px"
                     />
-                    <button type="button" onclick="toggleKeyVisibility('ak_${p.keyField}', this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-tertiary);font-size:14px">👁</button>
+                    <button type="button" data-action="toggle-visibility" data-target="ak_${p.keyField}" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-tertiary);font-size:14px">👁</button>
                   </div>
                   ${p.models ? `
                     <select id="ak_${p.modelField}" class="filter-select" style="width:100%">

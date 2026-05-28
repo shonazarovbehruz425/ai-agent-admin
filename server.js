@@ -188,9 +188,8 @@ app.get('/robots.txt', (req, res) => {
   res.send('User-agent: *\nDisallow: /api/\nAllow: /\n');
 });
 
-// Admin panel statik fayllarini serve qilish
-// index.html, admin.js, admin.css — bularning hammasi __dirname da
-app.use(express.static(__dirname, {
+// Admin panel statik fayllarini serve qilish — public folderdan
+app.use(express.static(path.join(__dirname, 'public'), {
   maxAge: '0',  // Admin panelni cache qilmaymiz
   index: false, // Auto index.html yubormaslik (login orqali boshqaramiz)
   setHeaders: (res, filePath) => {
@@ -533,7 +532,7 @@ io.on('connection', (socket) => {
 
 // Admin panel HTML ni serve qilish
 app.get('/{*path}', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // ─── Start ────────────────────────────────────────────────
